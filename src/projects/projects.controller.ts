@@ -6,14 +6,37 @@ import {
   Patch,
   Param,
   Delete,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 @Controller('projects')
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
+
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'image', maxCount: 1 },
+      { name: 'file', maxCount: 1 },
+    ]),
+  )
+  @Post('upload')
+  uploadFileAndFailValidation(
+    @Body() body: CreateProjectDto,
+    @UploadedFiles()
+    files: { image: Express.Multer.File[]; file: Express.Multer.File[] },
+  ) {
+    const { image, file } = files;
+    return {
+      body,
+      image: image[0].buffer,
+      file: file[0].buffer,
+    };
+  }
 
   @Post()
   create(@Body() createProjectDto: CreateProjectDto) {
